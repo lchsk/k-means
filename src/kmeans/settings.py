@@ -8,26 +8,21 @@ class Settings(object):
         self.params = {}
 
         # Number of iterations to perform
-        self.params['iterations'] = 1
+        self.params['iterations'] = 2
 
         self.params['method'] = 2
 
-        # If set to True when program is run
-        # training data will be tested (and will give 100% accuracy!)
-        self.params['clusters'] = 5
-
-        self.clusters = 5
+        self.params['clusters'] = 3
 
     def help(self):
         '''Prints help information, explains all the parameters'''
 
-        print 'This program implements the perceptron algorithm, which in this case '
-        print 'classifies amazon reviews into positive or negative ones.'
+        print 'This program implements the K-means algorithm.'
         print 'Usage:'
         print '\t-h\tfor help'
         print '\t-i <int>\tnumber of iterations'
-        print '\t-t <int>\tnumber of tests'
-        print '\t-T\tif set, training data will be tested (and not test data)'
+        print '\t-m <int>\tmethod (1 - cluster means which are not instances of the clusters, 2 - cluster means which are instances of the clusters)'
+        print '\t-c\t <int>\tnumber of clusters'
 
         sys.exit(0)
 
@@ -45,7 +40,6 @@ class Settings(object):
                 elif opt in ('-m', '--method'):
                     self.params['method'] = int(arg)
                 elif opt in ('-c', '--clusters'):
-                    # If it is set to true, then we are going to test against the training data(!)
                     self.params['clusters'] = int(arg)
                 else:
                     self.help()

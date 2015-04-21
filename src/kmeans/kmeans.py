@@ -9,12 +9,14 @@ class KMeans(object):
 
         # Cluster centres
         self.centres = []
-        # self._get_random_clusters
 
         self.a = {}
 
-
     def run(self):
+        '''
+            Method 1: using cluster means which are not instances of the cluster.
+            Method 2: using cluster means which are instances of the cluster.
+        '''
 
         if self.settings.params['method'] == 1:
             self._method1()
@@ -22,7 +24,9 @@ class KMeans(object):
             self._method2()
 
     def _method1(self):
-        # Ver 1
+        '''
+        Method 1 - run. (cluster means)
+        '''
 
         # Initial random centres
         for i in xrange(0, self.settings.params['clusters']):
@@ -43,12 +47,12 @@ class KMeans(object):
         self._test()
 
     def _method2(self):
+        '''
+        Method 2 - run. (cluster means which are instances of the cluster)
+        '''
 
         self._pick_random_clusters()
         self._assign_to_clusters()
-
-        for c, l in self.a.iteritems():
-            print '1: ', c, len(l)
 
         for i in xrange(0, self.settings.params['iterations']):
             print 'Iteration %s' % i
@@ -56,32 +60,31 @@ class KMeans(object):
             self._find_centre_instances()
             self.a = {}
             self._assign_to_clusters()
+            self._evaluate()
 
-        print self._test()
+        self._test()
 
     def _find_centre_instances(self):
-
-        print 'find-centre-instances'
-
+        '''
+            Finds instances of each cluster which are centers of the clusters.
+        '''
         for c, l in self.a.iteritems():
-            print 'c: ', c, len(l)
             ds = []
 
+            # Compute distance between each instance pair (i1, i2)
             for i1 in l:
                 for i2 in l:
                     if i1 != i2:
                         d = self.get_distance(i1, i2)
                         ds.append([i1, i2, d])
 
-            print 'ds ', len(ds)
             stats = {}
 
+            # ds is a list of pairs <i1, i2, distance_between i2 and i2>
             for i in self.data.instances:
                 for triple in ds:
                     if i in triple:
                         stats[i] = stats.get(i, 0) + triple[2]
-
-            print 'stats ', len(stats)
 
             new_c = None
             smallest_d = 0
@@ -93,12 +96,12 @@ class KMeans(object):
                 if v < smallest_d:
                     new_c, smallest_d = k, v
 
-            # print new_c, smallest_d
-
             self.centres.append(new_c)
-            # print self.centres
 
     def _find_centres(self):
+        '''
+            Finds mean of the cluster which is not an instance.
+        '''
 
         for c, l in self.a.iteritems():
             _i = Instance()
@@ -113,20 +116,13 @@ class KMeans(object):
             for k, v in tmp.iteritems():
                 s = sum(v) / len(v)
                 _i.features[k] = _i.features.get(k, 0) + s
-                    # _i.features[k] = _i.features.get(k, 0) + v
 
-
-            # i = 0
-            # for word in sorted(_i.features, key=_i.features.get, reverse=True):
-                # if i >= 120:
-                    # del _i.features[word]
-                # i += 1
-
-            # print len(_i.features)
-            # print 'c: ', _i.features
             self.centres.append(_i)
 
     def _test(self):
+        '''
+            Calculates how many instances of each label are in all clusters.
+        '''
 
         self.stats = {}
 
@@ -145,6 +141,9 @@ class KMeans(object):
                 print '\t' + k + '\t' + str(v)
 
     def _generate_random_instance(self):
+        '''
+            Generates random instance (ie which is not an actual instance. (for method 1))
+        '''
 
         _i = Instance()
         _i.label = random.choice(self.data.labels)
@@ -160,6 +159,10 @@ class KMeans(object):
         return _i
 
     def _pick_random_clusters(self):
+        '''
+            (for method 2)
+            Picks random instances as initial cluster centres.
+        '''
 
         for i in xrange(0, self.settings.params['clusters']):
 
@@ -169,29 +172,34 @@ class KMeans(object):
                 self.centres.append(_instance)
 
     def get_distance(self, instance1, instance2):
+        '''
+            Computes distance between two instances.
+        '''
 
         d = 0
 
         for k, v in instance1.features.iteritems():
-            if k in instance1.features and k in instance2.features:
+            if instance1 and instance2 and k in instance1.features and k in instance2.features:
                 d += math.pow(instance1.features[k] - instance2.features[k], 2)
-                # d += math.pow(instance1.features[k] - instance2.features.get(k, 0), 2)
 
         d = math.sqrt(d)
-
-        if d == 1.0:
-            print '1.0: ', instance1.features, 'ins2: ', instance2.features
 
         return d
 
     def _evaluate(self):
+        '''
+            Computes evaluation measures:
+            - precision
+            - recall
+            - f-score
+        '''
 
         for c, l in self.a.iteritems():
             tmp = {}
             for i in l:
                 tmp[i.label] = tmp.get(i.label, 0) + 1
 
-            if len(tmp) > 0:
+            if len(tmp) and c > 0:
                 # Dominant label in the cluster
                 dominant = sorted(tmp, key=tmp.get, reverse=True)[0]
                 c.label_centre = dominant
@@ -202,14 +210,14 @@ class KMeans(object):
         recall = {}
         labels = []
         for c, l in self.a.iteritems():
-            if c.label_centre and c.label_centre not in labels:
+            if c and c.label_centre and c.label_centre not in labels:
                 labels.append(c.label_centre)
 
         for c, l in self.a.iteritems():
             n = 0
-            if len(l) > 0:
+            if len(l) and c > 0:
                 for i in l:
-                    if i.label == c.label_centre:
+                    if c and i.label == c.label_centre:
                         n += 1
                 p = float(n) / len(l)
                 r = float(n) / 51
@@ -221,9 +229,14 @@ class KMeans(object):
         R = sum(recall.values()) / len(recall)
         F = 2 * P * R / (P + R)
 
-        print P, R, F
+        print 'Macro-averaged precision: %s' % P
+        print 'Macro-averaged recall: %s' % R
+        print 'Macro-averaged F-score: %s' % F
 
     def _merge_dicts(self, d1, d2):
+        '''
+            Merge two dictionaries
+        '''
 
         d = {}
 
@@ -237,6 +250,10 @@ class KMeans(object):
                 d[k] = v
 
     def _assign_to_clusters(self):
+        '''
+            (both method 1 & 2)
+            Assigns all instances to their closest cluster centre.
+        '''
 
         for i in self.data.instances:
             i.cluster = None
@@ -248,18 +265,11 @@ class KMeans(object):
                 self.a[c] = []
 
             for i in self.data.instances:
-                # print c, i
                 d = self.get_distance(i, c)
-                # print c, i, d
 
                 if d > i.distance:
-                    # print 'change: ', d, i.distance
                     i.cluster = c
                     i.distance = d
-                else:
-                    print 'nochange: ', d, i.distance
-                    # print i.features
-                    pass
 
         for i in self.data.instances:
             c = i.cluster
